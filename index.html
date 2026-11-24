@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel NS Player</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: ferramenta de dois passos, direta, para a dona da revenda
+   IDEA: a etiqueta de configuração de uma TV Box: primeiro identifica o aparelho, depois coloca a lista
+   PICTURE: o próprio formulário em duas telas, com a "tela do cliente" ao lado acompanhando
+   COLOUR and TYPE: preto NS, vermelho #E3262E na ação, Archivo Black no nome, Inter no resto
+   LAYOUT: faixa colorida, cabeçalho preto, passos 1 e 2 no topo do cartão; no celular tudo empilhado */
+:root{color-scheme:light dark;--bg:light-dark(#F2F3F7,#14151B);--panel:light-dark(#FFFFFF,#1E2029);--line:light-dark(#DDE0E7,#30333F);--ink:light-dark(#15171D,#F4F5F8);--muted:light-dark(#5E6472,#A9AEBC);--field:light-dark(#FFFFFF,#171920);--soft:light-dark(#F4F5F8,#262935);--red:#E3262E;--green:light-dark(#1E8E3E,#2FB34A)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;overflow-x:clip}
+.stripe{display:flex;height:5px}.stripe i{flex:1}
+header{background:#0A0A0C;color:#F4F5F8;padding:18px max(5vw,16px)}
+header h1{font:26px/1 "Archivo Black",Inter,sans-serif;margin:0;letter-spacing:.02em}header h1 b{color:var(--red);font-weight:inherit}
+header p{margin:6px 0 0;color:#A9AEBC;font-size:14px}
+main{max-width:920px;margin:0 auto;padding:26px max(5vw,16px) 40px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:22px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+.steps{display:flex;gap:8px;margin-bottom:18px}
+.steps div{flex:1;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);padding-bottom:10px;border-bottom:3px solid var(--line)}
+.steps span{width:24px;height:24px;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;font-size:12px;flex:none}
+.steps .on{color:var(--ink);border-color:var(--red)}.steps .on span{background:var(--red);color:#fff}
+.steps .done{color:var(--ink);border-color:var(--green)}.steps .done span{background:var(--green);color:#fff}
+h2{font-size:19px;margin:0 0 4px}
+.lead{color:var(--muted);font-size:14px;margin:0 0 8px}
+label{display:block;font-size:13px;font-weight:600;margin:14px 0 5px}
+input,select{width:100%;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--ink);font:16px Inter,sans-serif;padding:0 12px}
+input:focus-visible,select:focus-visible,button:focus-visible,.drop:focus-within{outline:2px solid var(--red);outline-offset:1px}
+input.mono{font:600 18px ui-monospace,Consolas,monospace;letter-spacing:.05em;text-transform:uppercase}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.eye{position:relative}.eye input{padding-right:76px}.eye button{position:absolute;right:6px;top:6px;height:34px;border:0;border-radius:8px;background:none;color:var(--muted);font:600 13px Inter;cursor:pointer;padding:0 10px}
+.err{color:var(--red);font-size:14px;min-height:1.4em;margin-top:12px}
+.pri{width:100%;height:50px;margin-top:4px;border:0;border-radius:12px;background:var(--red);color:#fff;font:700 16px Inter,sans-serif;cursor:pointer}
+.pri:hover{background:#c91f26}.pri:disabled{opacity:.6;cursor:default}
+.link{background:none;border:0;color:var(--muted);font:600 14px Inter;cursor:pointer;padding:8px 0;margin-top:6px}
+.link:hover{color:var(--ink)}
+.acts2{display:flex;justify-content:space-between;gap:10px}
+.found{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:12px;padding:12px 14px;margin:4px 0 6px}
+.found i{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 25%,transparent);flex:none}
+.found b{display:block}.found span{color:var(--muted);font-size:13px}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:var(--soft);border-radius:12px;padding:4px;margin-top:14px}
+.seg button{height:42px;border:0;border-radius:9px;background:none;color:var(--muted);font:600 14px Inter;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px #0002}
+.pane{display:none}.pane.on{display:block}
+.drop{margin-top:14px;border:2px dashed var(--line);border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;display:block}
+.drop:hover,.drop.over{border-color:var(--red);background:color-mix(in srgb,var(--red) 6%,transparent)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.drop b{display:block;margin-bottom:2px}.drop span{color:var(--muted);font-size:13px}
+.file{display:none;margin-top:10px;background:var(--soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.file.on{display:flex;gap:10px;align-items:center}.file b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file span{color:var(--muted);font-size:13px;white-space:nowrap}
+.hint{color:var(--muted);font-size:13px;margin-top:6px}
+.ok{text-align:center;padding:10px 0}
+.ok .big{width:64px;height:64px;border-radius:50%;background:color-mix(in srgb,var(--green) 15%,transparent);display:grid;place-items:center;margin:4px auto 12px}
+.ok .big svg{width:32px;height:32px;stroke:var(--green);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ok h2{margin-bottom:6px}.ok p{color:var(--muted);margin:0 0 16px}
+.tv{background:#0A0A0C;color:#F4F5F8;border-radius:16px;padding:20px;border:1px solid #2a2a30;position:sticky;top:16px}
+.tv .k{color:#A9AEBC;font-size:13px}
+.tv .v{font:600 22px ui-monospace,Consolas,monospace;letter-spacing:.05em;margin:2px 0 12px}
+.tv hr{border:0;border-top:1px solid #2a2a30;margin:14px 0}
+.tv .st{display:flex;align-items:center;gap:8px;font-weight:600}
+.tv .st i{width:9px;height:9px;border-radius:50%;background:#E0A21A;flex:none}
+.tv .st.done i{background:#2FB34A;box-shadow:0 0 0 4px #2FB34A33}
+.top{display:flex;align-items:center;gap:12px}.top div{flex:1}.out{background:none;border:1px solid #3a3a42;color:#C9CCD6;border-radius:9px;height:34px;padding:0 12px;font:600 13px Inter;cursor:pointer}.out:hover{color:#fff;border-color:#666}
+.login{max-width:420px;margin:40px auto;grid-column:1/-1}
+.tvh{display:flex;justify-content:space-between;align-items:center;gap:8px}.tvh button{background:none;border:1px solid #3a3a42;color:#C9CCD6;border-radius:8px;height:30px;padding:0 10px;font:600 13px Inter;cursor:pointer}.tvh button:hover{color:#fff;border-color:#777}.tvh button:disabled{opacity:.6}
+.tv .info{font-size:14px;color:#C9CCD6;line-height:1.7}.tv .info b{color:#F4F5F8;font-weight:600}
+[hidden]{display:none!important}
+@media(max-width:720px){main{grid-template-columns:1fr}.tv{position:static}}
+</style>
+</head>
+<body>
+<div class="stripe"><i style="background:#C8C8C8"></i><i style="background:#D6C21F"></i><i style="background:#1FB8C4"></i><i style="background:#2FB34A"></i><i style="background:#C23BB5"></i><i style="background:#D23A32"></i><i style="background:#2442C9"></i></div>
+<header><div class="top"><div><h1>PAINEL <b>NS</b> PLAYER</h1><p>Configurar a lista no aparelho do cliente</p></div><button class="out" id="sair" hidden>Sair</button></div></header>
+
+<main>
+  <!-- LOGIN -->
+  <form class="card login" id="t0" novalidate hidden>
+    <h2>Entrar no painel</h2>
+    <p class="lead">Acesso exclusivo da NS Stream.</p>
+    <label for="email">E-mail</label><input id="email" type="email" autocomplete="username">
+    <label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password">
+    <div class="err" id="err0" role="alert"></div>
+    <button class="pri" id="go0" type="submit">Entrar</button>
+  </form>
+
+  <section class="card" id="app" hidden>
+    <div class="steps" aria-label="Etapas"><div id="s1" class="on"><span>1</span>Aparelho</div><div id="s2"><span>2</span>Lista</div></div>
+
+    <!-- TELA 1 -->
+    <form id="t1" novalidate>
+      <h2>Acessar aparelho</h2>
+      <p class="lead">Digite as duas informações que o cliente mandou. Elas aparecem no NS Player, na tela inicial e em Configurações → Configurar pelo painel.</p>
+      <label for="mac">Endereço MAC</label>
+      <input id="mac" class="mono" placeholder="00:1A:79:XX:XX:XX" autocomplete="off">
+      <label for="key">Chave</label>
+      <input id="key" class="mono" inputmode="numeric" placeholder="000 000" autocomplete="off" maxlength="7">
+      <div class="err" id="err1" role="alert"></div>
+      <button class="pri" id="go1" type="submit">Continuar</button>
+    </form>
+
+    <!-- TELA 2 -->
+    <form id="t2" novalidate hidden>
+      <h2>Configurar lista</h2>
+      <div class="found"><i></i><div><b id="fMac"></b><span id="fInfo"></span></div></div>
+
+      <div class="seg" role="tablist" id="seg">
+        <button type="button" role="tab" data-p="srv" class="on" aria-selected="true">Servidor</button>
+        <button type="button" role="tab" data-p="url" aria-selected="false">Link M3U</button>
+        <button type="button" role="tab" data-p="file" aria-selected="false">Arquivo M3U</button>
+      </div>
+
+      <div class="pane on" id="p-srv">
+        <label for="srv">Servidor</label>
+        <select id="srv"></select>
+        <input id="srvOutro" placeholder="http://dns:porta" autocomplete="off" style="margin-top:8px" hidden>
+        <div class="row2">
+          <div><label for="user">Usuário</label><input id="user" autocomplete="off"></div>
+          <div><label for="pass">Senha</label><div class="eye"><input id="pass" type="password" autocomplete="off"><button type="button" id="see">Mostrar</button></div></div>
+        </div>
+      </div>
+
+      <div class="pane" id="p-url">
+        <label for="m3u">Link da lista M3U</label>
+        <input id="m3u" type="url" inputmode="url" placeholder="http://servidor:porta/get.php?username=...&type=m3u_plus" autocomplete="off">
+        <div class="hint">Cole o link completo. O aparelho baixa a lista desse endereço.</div>
+      </div>
+
+      <div class="pane" id="p-file">
+        <label class="drop" id="drop" for="fileIn">
+          <input id="fileIn" type="file" accept=".m3u,.m3u8,.txt">
+          <b>Escolher arquivo .m3u</b><span>ou arraste o arquivo para cá (até 15 MB)</span>
+        </label>
+        <div class="file" id="fileBox"><b id="fileName"></b><span id="fileInfo"></span></div>
+      </div>
+
+      <div class="err" id="err2" role="alert"></div>
+      <button class="pri" id="go2" type="submit">Enviar para o aparelho</button>
+      <div class="acts2"><button class="link" id="back" type="button">← Trocar aparelho</button><button class="link" id="limpar" type="button">Limpar campos</button></div>
+    </form>
+
+    <!-- CONCLUÍDO -->
+    <div id="t3" class="ok" hidden>
+      <div class="big"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <h2>Lista enviada</h2>
+      <p id="okMsg"></p>
+      <button class="pri" id="again" type="button">Configurar outro aparelho</button>
+    </div>
+  </section>
+
+  <aside class="tv" id="tv" aria-label="Aparelho do cliente" hidden>
+    <div class="tvh"><div class="k">Aparelho do cliente</div><button type="button" id="refresh" hidden>↻ Atualizar</button></div>
+    <hr>
+    <div class="k">Endereço MAC</div><div class="v" id="tvMac">__:__:__:__:__:__</div>
+    <div class="k">Chave</div><div class="v" id="tvKey">___ ___</div>
+    <div class="info" id="tvInfo"></div>
+    <hr>
+    <div class="st" id="tvSt"><i></i><span id="tvMsg">Aguardando os dados do cliente</span></div>
+  </aside>
+</main>
+
+<script>
+// ================== CONFIGURAÇÃO ==================
+// Supabase > Project Settings > API (use só a chave "anon public", NUNCA a service_role)
+const SUPABASE_URL = 'https://jdcbwbbjyvodvrvjmfgx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_baDq6wy16sZAhEj5DtUM1A_ivzOScLN';
+// apelidos que o NS Player conhece (os mesmos do arquivo servidores.js do app)
+const SERVIDORES = ['atmos'];
+// ==================================================
+{
+const $ = id => document.getElementById(id);
+let token = sessionStorage.getItem('ns_tok') || '', mode = 'srv', file = null, dev = null, poll = null;
+
+// ---- conexão com o Supabase ----
+async function api(path, body, auth) {
+  const r = await fetch(SUPABASE_URL.replace(/\/$/, '') + path, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', ...(auth === SUPABASE_KEY || !token ? {} : { Authorization: 'Bearer ' + token }) },
+    body: JSON.stringify(body)
+  });
+  const data = await r.json().catch(() => null);
+  if (r.status === 401 && path.startsWith('/rest')) { sair('Sua sessão expirou. Entre de novo.'); throw new Error('sessao'); }
+  if (!r.ok) throw new Error((data && (data.error_description || data.msg || data.message)) || 'Erro ' + r.status);
+  return data;
+}
+const rpc = (fn, args) => api('/rest/v1/rpc/' + fn, args);
+const ERROS = {
+  nao_existe: 'Aparelho não encontrado. Confira o MAC e peça para o cliente abrir o NS Player conectado à internet.',
+  chave_errada: 'Chave incorreta. Confira com o cliente.',
+  bloqueado: 'Muitas tentativas erradas neste aparelho. Aguarde 15 minutos.',
+  sem_permissao: 'Este login não tem permissão no painel.',
+  arquivo_vazio: 'O arquivo está vazio.'
+};
+
+// ---- telas ----
+function tela(n) {
+  $('t0').hidden = n !== 0; $('app').hidden = n === 0; $('tv').hidden = n === 0; $('sair').hidden = n === 0;
+  ['t1','t2','t3'].forEach((t, i) => $(t).hidden = i !== n - 1);
+  if (n) { $('s1').className = n === 1 ? 'on' : 'done'; $('s2').className = n === 2 ? 'on' : n === 3 ? 'done' : ''; }
+}
+function sair(m) { token = ''; sessionStorage.removeItem('ns_tok'); clearInterval(poll); tela(0); $('err0').textContent = m || ''; }
+$('sair').onclick = () => sair();
+
+// ---- login ----
+$('t0').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = $('go0'); b.disabled = true; b.textContent = 'Entrando...'; $('err0').textContent = '';
+  try {
+    const d = await api('/auth/v1/token?grant_type=password', { email: $('email').value.trim(), password: $('senha').value }, SUPABASE_KEY);
+    token = d.access_token; sessionStorage.setItem('ns_tok', token); $('senha').value = '';
+    tela(1); $('mac').focus();
+  } catch (err) {
+    $('err0').textContent = /invalid/i.test(err.message) ? 'E-mail ou senha incorretos.' : 'Não foi possível entrar (' + err.message + ').';
+  }
+  b.disabled = false; b.textContent = 'Entrar';
+});
+
+// ---- tela 1 ----
+const fmtKey = v => { const d = v.replace(/\D/g, '').slice(0, 6); return d.length > 3 ? d.slice(0, 3) + ' ' + d.slice(3) : d; };
+const normMac = v => { const h = v.toUpperCase().replace(/[^0-9A-F]/g, ''); return h.length === 12 ? h.match(/../g).join(':') : v.toUpperCase().trim(); };
+const quando = t => { const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 2 ? 'agora' : m < 60 ? 'há ' + m + ' min' : m < 1440 ? 'há ' + Math.round(m / 60) + ' h' : 'há ' + Math.round(m / 1440) + ' dias'; };
+$('mac').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^0-9A-F:-]/g, '').slice(0, 17); $('tvMac').textContent = normMac(e.target.value) || '__:__:__:__:__:__'; $('err1').textContent = ''; });
+$('mac').addEventListener('blur', e => { e.target.value = normMac(e.target.value); });
+// colar o texto do botão "Copiar" do app (MAC + chave juntos) preenche os dois campos
+function colar(e) {
+  const t = (e.clipboardData || window.clipboardData).getData('text') || '';
+  const m = t.match(/([0-9A-F]{2}[:-]){5}[0-9A-F]{2}/i), k = t.match(/chave\D*(\d{3})\s?(\d{3})/i);
+  if (!m && !k) return;
+  e.preventDefault();
+  if (m) { $('mac').value = normMac(m[0]); $('tvMac').textContent = $('mac').value; }
+  if (k) { $('key').value = k[1] + ' ' + k[2]; $('tvKey').textContent = $('key').value; }
+  else if (e.target.id === 'key') { const d = t.replace(/\D/g, ''); if (d.length === 6) { $('key').value = fmtKey(d); $('tvKey').textContent = $('key').value; } }
+  $('err1').textContent = '';
+  (m && k ? $('go1') : m ? $('key') : $('key')).focus();
+}
+$('mac').addEventListener('paste', colar); $('key').addEventListener('paste', colar);
+$('key').addEventListener('input', e => { e.target.value = fmtKey(e.target.value); $('tvKey').textContent = e.target.value || '___ ___'; $('err1').textContent = ''; });
+$('t1').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('mac').value = normMac($('mac').value);
+  if (!/^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/.test($('mac').value)) { $('err1').textContent = 'Confira o MAC. Formato: 00:1A:79:XX:XX:XX.'; return $('mac').focus(); }
+  if ($('key').value.replace(/\D/g, '').length !== 6) { $('err1').textContent = 'A chave tem 6 números.'; return $('key').focus(); }
+  const b = $('go1'); b.disabled = true; b.textContent = 'Procurando aparelho...';
+  try {
+    const d = await rpc('ns_painel_verificar', { p_mac: $('mac').value, p_chave: $('key').value.replace(/\D/g, '') });
+    if (d.erro) { $('err1').textContent = ERROS[d.erro] || d.erro; }
+    else {
+      mostrar(d, true);
+      tela(2); setTimeout(() => $('user').focus(), 30);
+    }
+  } catch (err) { if (err.message !== 'sessao') $('err1').textContent = 'Sem conexão com o painel (' + err.message + ').'; }
+  b.disabled = false; b.textContent = 'Continuar';
+});
+
+// ---- tela 2 ----
+SERVIDORES.forEach(s => $('srv').add(new Option(s, s)));
+$('srv').add(new Option('Outro endereço...', '__outro'));
+$('srv').onchange = () => { $('srvOutro').hidden = $('srv').value !== '__outro'; if (!$('srvOutro').hidden) $('srvOutro').focus(); };
+$('seg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  mode = b.dataset.p; $('err2').textContent = '';
+  $('seg').querySelectorAll('button').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); });
+  ['srv','url','file'].forEach(p => $('p-' + p).classList.toggle('on', p === mode));
+});
+$('see').onclick = () => { const p = $('pass'), s = p.type === 'password'; p.type = s ? 'text' : 'password'; $('see').textContent = s ? 'Ocultar' : 'Mostrar'; };
+function pick(f) {
+  if (!f) return;
+  if (!/\.(m3u8?|txt)$/i.test(f.name)) { $('err2').textContent = 'Escolha um arquivo .m3u ou .m3u8.'; return; }
+  if (f.size > 15 * 1048576) { $('err2').textContent = 'Arquivo grande demais (máximo 15 MB). Use o Link M3U.'; return; }
+  const r = new FileReader();
+  r.onload = () => {
+    const n = (String(r.result).match(/#EXTINF/gi) || []).length;
+    if (!n) { $('err2').textContent = 'Esse arquivo não parece uma lista M3U (nenhum canal encontrado).'; file = null; $('fileBox').classList.remove('on'); return; }
+    file = { name: f.name, n, text: String(r.result) };
+    $('fileName').textContent = f.name;
+    const size = f.size >= 1048576 ? (f.size / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB';
+    $('fileInfo').textContent = n.toLocaleString('pt-BR') + (n === 1 ? ' item · ' : ' itens · ') + size;
+    $('fileBox').classList.add('on'); $('err2').textContent = '';
+  };
+  r.readAsText(f);
+}
+$('fileIn').addEventListener('change', e => pick(e.target.files[0]));
+['dragover','dragenter'].forEach(t => $('drop').addEventListener(t, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave','drop'].forEach(t => $('drop').addEventListener(t, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => pick(e.dataTransfer.files[0]));
+$('limpar').onclick = () => {
+  ['user','pass','m3u','srvOutro'].forEach(i => $(i).value = '');
+  $('srv').selectedIndex = 0; $('srvOutro').hidden = true;
+  file = null; $('fileIn').value = ''; $('fileBox').classList.remove('on'); $('err2').textContent = '';
+  const ab = $('seg').querySelector('.on').dataset.p; ({ srv: 'user', url: 'm3u' })[ab] && $(({ srv: 'user', url: 'm3u' })[ab]).focus();
+};
+$('back').onclick = () => { clearInterval(poll); $('refresh').hidden = true; tela(1); $('tvInfo').textContent = ''; $('tvSt').classList.remove('done'); $('tvMsg').textContent = 'Aguardando os dados do cliente'; $('mac').focus(); };
+
+$('t2').addEventListener('submit', async e => {
+  e.preventDefault();
+  let desc, tipo, dados = {}, texto = null, nome = null;
+  if (mode === 'srv') {
+    const server = $('srv').value === '__outro' ? $('srvOutro').value.trim() : $('srv').value;
+    if (!server) { $('err2').textContent = 'Informe o endereço do servidor.'; return $('srvOutro').focus(); }
+    if (!$('user').value.trim()) { $('err2').textContent = 'Informe o usuário.'; return $('user').focus(); }
+    if (!$('pass').value) { $('err2').textContent = 'Informe a senha.'; return $('pass').focus(); }
+    tipo = 'servidor'; dados = { server, user: $('user').value.trim(), pass: $('pass').value };
+    desc = server + ' · ' + dados.user;
+  } else if (mode === 'url') {
+    const u = $('m3u').value.trim();
+    if (!/^https?:\/\/\S+$/i.test(u)) { $('err2').textContent = 'Cole um link que comece com http:// ou https://'; return $('m3u').focus(); }
+    tipo = 'link'; dados = { url: u }; desc = 'link M3U';
+  } else {
+    if (!file) { $('err2').textContent = 'Escolha o arquivo da lista.'; return; }
+    tipo = 'arquivo'; texto = file.text; nome = file.name; dados = { nome }; desc = 'arquivo ' + file.name;
+  }
+  const b = $('go2'); b.disabled = true; b.textContent = 'Enviando...';
+  try {
+    const d = await rpc('ns_painel_enviar', { p_mac: dev.mac, p_chave: $('key').value.replace(/\D/g, ''), p_tipo: tipo, p_dados: dados, p_texto: texto, p_nome: nome });
+    if (d.erro) { $('err2').textContent = ERROS[d.erro] || d.erro; }
+    else {
+      $('okMsg').textContent = 'O aparelho ' + dev.mac + ' vai carregar a lista (' + desc + ') em até 1 minuto, se o NS Player estiver aberto. Se estiver fechado, carrega quando o cliente abrir.';
+      $('tvSt').classList.remove('done'); $('tvMsg').textContent = 'Enviado. Aguardando o aparelho aplicar...';
+      tela(3); acompanhar();
+    }
+  } catch (err) { if (err.message !== 'sessao') $('err2').textContent = 'Não foi possível enviar (' + err.message + ').'; }
+  b.disabled = false; b.textContent = 'Enviar para o aparelho';
+});
+
+function mostrar(d, campos) {
+  dev = d;
+  $('fMac').textContent = d.mac;
+  const at = d.atual || null;
+  const atualTxt = !at ? 'nenhuma' : at.tipo === 'servidor' ? at.server + ' · ' + at.user : at.tipo === 'link' ? 'link M3U' : 'arquivo M3U';
+  $('fInfo').textContent = 'Aparelho encontrado · ' + (d.computador || 'computador') + ' · último contato ' + quando(d.visto_em) + ' · lista atual: ' + atualTxt;
+  $('tvInfo').innerHTML = 'Computador: <b></b><br>Versão do app: <b></b><br>Último contato: <b></b><br>Lista atual: <b></b>';
+  const bs = $('tvInfo').querySelectorAll('b'); bs[0].textContent = d.computador || '—'; bs[1].textContent = d.versao_app || '—'; bs[2].textContent = quando(d.visto_em); bs[3].textContent = atualTxt;
+  if (campos) preencher(at);
+  $('tvSt').classList.toggle('done', !!d.aplicado);
+  $('tvMsg').textContent = d.config_tipo ? (d.aplicado ? 'Configuração atual aplicada' : 'Configuração enviada, aguardando o aparelho') : 'Aparelho ainda sem configuração do painel';
+  $('refresh').hidden = false;
+}
+$('refresh').onclick = async () => {
+  if (!dev) return;
+  const b = $('refresh'); b.disabled = true; b.textContent = 'Atualizando...';
+  try {
+    const d = await rpc('ns_painel_verificar', { p_mac: dev.mac, p_chave: $('key').value.replace(/\D/g, '') });
+    if (!d.erro) mostrar(d, !$('t2').hidden);
+  } catch (e) {}
+  b.disabled = false; b.textContent = '↻ Atualizar';
+};
+
+// abre a tela 2 com a lista que já está no aparelho
+function preencher(at) {
+  ['user','pass','m3u','srvOutro'].forEach(i => $(i).value = ''); $('srv').selectedIndex = 0; $('srvOutro').hidden = true;
+  if (!at) return $('seg').querySelector('[data-p="srv"]').click();
+  if (at.tipo === 'servidor') {
+    const o = [...$('srv').options].find(x => x.value.toLowerCase() === String(at.server || '').toLowerCase());
+    if (o) $('srv').value = o.value; else { $('srv').value = '__outro'; $('srvOutro').hidden = false; $('srvOutro').value = at.server || ''; }
+    $('user').value = at.user || ''; $('pass').value = at.pass || '';
+    $('seg').querySelector('[data-p="srv"]').click();
+  } else if (at.tipo === 'link') { $('m3u').value = at.url || ''; $('seg').querySelector('[data-p="url"]').click(); }
+  else $('seg').querySelector('[data-p="file"]').click();
+}
+
+// acompanha até o aparelho confirmar (por 5 minutos)
+function acompanhar() {
+  clearInterval(poll); const fim = Date.now() + 300000, chave = $('key').value.replace(/\D/g, '');
+  poll = setInterval(async () => {
+    if (Date.now() > fim) return clearInterval(poll);
+    try {
+      const d = await rpc('ns_painel_verificar', { p_mac: dev.mac, p_chave: chave });
+      if (d.aplicado) { clearInterval(poll); $('tvSt').classList.add('done'); $('tvMsg').textContent = 'Lista aplicada no aparelho ✓'; }
+    } catch (e) {}
+  }, 5000);
+}
+
+// ---- outro aparelho ----
+$('again').onclick = () => {
+  clearInterval(poll); $('refresh').hidden = true; ['t1','t2'].forEach(f => $(f).reset()); file = null; dev = null; $('fileBox').classList.remove('on'); $('srvOutro').hidden = true;
+  $('tvMac').textContent = '__:__:__:__:__:__'; $('tvKey').textContent = '___ ___'; $('tvInfo').textContent = '';
+  $('tvSt').classList.remove('done'); $('tvMsg').textContent = 'Aguardando os dados do cliente';
+  $('seg').querySelector('[data-p="srv"]').click(); tela(1); $('mac').focus();
+};
+
+tela(token ? 1 : 0);
+}
+</script>
+</body>
+</html>
